@@ -45,6 +45,7 @@ export default function AttempQuestions() {
         });
       });
       setQuestions((prev) => [...ques]);
+      setQuesIdx((prev) => 0);
     } catch (err) {
       alert(err.message);
     }
@@ -147,64 +148,6 @@ export default function AttempQuestions() {
 
   const handleAnswerSubmission = async (e) => {
     e.preventDefault();
-    // setQuestions((prev) => {
-    //   let i = 0;
-    //   const updatedData = [];
-    //   while (i < questions.length) {
-    //     if (i != quesIdx) {
-    //       updatedData.push(questions[i]);
-    //       i++;
-    //       continue;
-    //     }
-    //     const obj = {
-    //       ...questions[quesIdx],
-    //       ...formData,
-    //       status: 'attempted',
-    //       result:
-    //         formData.answer == questions[quesIdx].correctAns
-    //           ? 'correct'
-    //           : 'incorrect',
-    //     };
-    //     updatedData.push(obj);
-    //     i++;
-    //   }
-    //   return updatedData;
-    // });
-    // setFormData((prev) => initialFormState);
-    // if (quesIdx != questions.length - 1) setQuesIdx((prev) => prev + 1);
-    // return;
-    // try {
-    //   const response = await fetch(
-    //     'http://localhost:3000/exam/section/question/submit',
-    //     {
-    //       method: 'POST',
-    //       credentials: 'include',
-    //       headers: {
-    //         'Content-Type': 'application/json',
-    //       },
-    //       body: JSON.stringify({
-    //         answerData: {
-    //           ...questions[quesIdx],
-    //           ...formData,
-    //           status: 'attempted',
-    //           result:
-    //             formData.answer == questions[quesIdx].correctAns
-    //               ? 'correct'
-    //               : 'incorrect',
-    //         },
-    //       }),
-    //     }
-    //   );
-    //   const data = await response.json();
-    //   if (!response.ok) {
-    //     alert(data.message);
-    //     return;
-    //   }
-    //   setFormData((prev) => initialFormState);
-    //   if (quesIdx != questions.length - 1) setQuesIdx((prev) => prev + 1);
-    // } catch (err) {
-    //   alert(err.message);
-    // }
     addAnswerToDB();
   };
 
@@ -225,7 +168,7 @@ export default function AttempQuestions() {
     questions.forEach((question) => {
       result[question.status] = ++result[question.status];
     });
-    navigateTo('/attempt-exam/submit-section', {state: {data: result}})
+    navigateTo('/attempt-exam/submit-section', { state: { data: result } });
   };
 
   return (
@@ -274,7 +217,7 @@ export default function AttempQuestions() {
           </div>
         </div>
         {/* Question Screen */}
-        {quesIdx != -1 ? (
+        {quesIdx != -1 && (
           <div className="flex-1 border-e h-full relative">
             <p className="text-gray-700 text-xl px-6 py-10 bg-gray-100 font-medium">
               <span className="text-xs font-regular text-black">
@@ -337,14 +280,6 @@ export default function AttempQuestions() {
               </div>
             </form>
           </div>
-        ) : (
-          questions.forEach((q, idx) => {
-            if (q.status == 'unattempted' && quesIdx == -1) {
-              setQuesIdx((prev) => idx);
-            } else if (idx == section.num_question - 1 && quesIdx == -1) {
-              setQuesIdx((prev) => 0);
-            }
-          })
         )}
         {/* Don't know why I created it... */}
         <div className="w-1/5 border-e h-full flex flex-col p-5">
@@ -355,7 +290,10 @@ export default function AttempQuestions() {
             </p>
           </div>
           <div className="bg-white w-full">
-            <button onClick={handleFinishSection} className="bg-green-700 py-4 rounded w-full text-white font-semibold hover:bg-green-800">
+            <button
+              onClick={handleFinishSection}
+              className="bg-green-700 py-4 rounded w-full text-white font-semibold hover:bg-green-800"
+            >
               Finish Section
             </button>
           </div>

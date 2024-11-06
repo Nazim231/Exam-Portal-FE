@@ -31,7 +31,12 @@ export default function SubmitSection() {
         return;
       }
 
-      
+      navigateTo('/attempt-exam', {
+        state: {
+          examId: data.examId,
+          redirectedFrom: 'submit-section'
+        }
+      });
 
     } catch (err) {
       alert(err.message);
@@ -59,7 +64,7 @@ export default function SubmitSection() {
           </p>
         </div>
         <div className="flex gap-4 mt-6 justify-center items-center">
-          <button className="bg-green-600 px-6 py-3 text-white rounded-md text-xl font-semibold">
+          <button onClick={submitSection} className="bg-green-600 px-6 py-3 text-white rounded-md text-xl font-semibold">
             Finish Section
           </button>
           <button
