@@ -1,15 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import logo from '../../../src/Logo.svg';
 
 export default function AttemptExam() {
   const navigateTo = useNavigate();
   const location = useLocation();
   const examId = location.state?.examId;
+  const redirectedFrom = location.state?.redirectedFrom;
   const [exam, setExam] = useState({});
   const [sections, setSections] = useState([]);
   const [isContVisible, setContVisible] = useState(true);
+  const [attemptedSection, setAttemptedSection] = useState(0);
+
+  /**
+   * below flag is used to stop the calling
+   * of getSections() functions twice after
+   * getting navigated to here from submit-section.
+   */
+  let sectionsFetched = false;
+
+  // store the count of attempted sections
 
   useEffect(() => {
     !examId && navigateTo('/dashboard');
@@ -46,10 +56,17 @@ export default function AttemptExam() {
       }
     };
 
-    examEntranceValidity();
+    if (redirectedFrom != 'submit-section') {
+      examEntranceValidity();
+    } else {
+      if (!sectionsFetched) getSections();
+      setContVisible(false);
+    }
   }, []);
 
   const getSections = async () => {
+    sectionsFetched = true;
+    setAttemptedSection(0);
     setSections((prev) => []);
     try {
       const url = `http://localhost:3000/exam/${examId}/section`;
@@ -63,9 +80,31 @@ export default function AttemptExam() {
         alert(`${data.message}`);
         return;
       }
-      data.data.forEach((section) =>
-        setSections((prev) => [...prev, { ...section, attempted: false }])
-      );
+
+      data.data.forEach((section) => {
+        let sectionFound = false;
+        for (let i = 0; i < data.attendedSections.length; i++) {
+          if (section._id == data.attendedSections[i].sectionId) {
+            sectionFound = true;
+            if (data.attendedSections[i].status == 'attempted') {
+              setAttemptedSection((prev) => prev + 1);
+            }
+            setSections((prev) => [
+              ...prev,
+              {
+                ...section,
+                status: data.attendedSections[i].status,
+              },
+            ]);
+            break;
+          }
+        }
+        if (!sectionFound)
+          setSections((prev) => [
+            ...prev,
+            { ...section, status: 'unattempted' },
+          ]);
+      });
     } catch (ex) {
       alert(`Failed to get sections, ${ex.message}`);
     }
@@ -85,6 +124,27 @@ export default function AttemptExam() {
     getSections();
     setContVisible(false);
   };
+
+  const markExamAsFinished = async (e) => {
+    e.preventDefault();
+    try {
+      const url = `http://localhost:3000/exam/mark-attempted/${examId}`;
+      const response = await fetch(url, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        alert(data.message);
+        return;
+      }
+      console.log(data);
+      navigateTo('/dashboard');
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
 
   return (
     <>
@@ -122,43 +182,66 @@ export default function AttemptExam() {
       {!isContVisible && (
         <div className="flex w-full h-svh justify-center bg-gray-100 p-5">
           <div className="w-2/3 h-full bg-white shadow-2xl rounded-xl p-5 relative">
-            <p className="font-bold text-2xl text-gray-700">Sections</p>
-
-            <div className="mt-8">
-              {sections &&
-                sections.map((section, idx) => {
-                  console.log('Section rendered', section, idx);
-                  return (
-                    <div
-                      key={section._id}
-                      className="p-4 rounded border flex justify-between items-center "
-                    >
-                      <div>
-                        <p className="font-bold text-lg font-gray-600">
-                          {section.title}
-                        </p>
-                        <p>
-                          Duration:{' '}
-                          <span className="font-bold">
-                            {section.duration} Minutes
-                          </span>
-                        </p>
-                      </div>
-                      {/* TODO: Start Working Here add button to start the section */}
-                      <button
-                        className="bg-blue-600 text-white px-4 py-2 rounded"
-                        onClick={() =>
-                          navigateTo('/attempt-exam/attempt-question', {
-                            state: { section: section, examId: examId },
-                          })
-                        }
-                      >
-                        Attempt Now
-                      </button>
-                    </div>
-                  );
-                })}
-            </div>
+            {attemptedSection != sections.length ? (
+              <div>
+                <p className="font-bold text-2xl text-gray-700">Sections</p>
+                <div className="mt-8">
+                  {sections &&
+                    sections.map((section, idx) => {
+                      return (
+                        <div
+                          key={section._id}
+                          className="p-4 rounded border flex justify-between items-center mt-4"
+                        >
+                          <div>
+                            <p className="font-bold text-lg font-gray-600">
+                              {section.title}
+                            </p>
+                            <p>
+                              Duration:{' '}
+                              <span className="font-bold">
+                                {section.duration} Minutes
+                              </span>
+                            </p>
+                          </div>
+                          {/* TODO: Start Working Here add button to start the section */}
+                          {section?.status != 'attempted' ? (
+                            <button
+                              className="bg-blue-600 text-white px-4 py-2 rounded"
+                              onClick={() =>
+                                navigateTo('/attempt-exam/attempt-question', {
+                                  state: { section: section, examId: examId },
+                                })
+                              }
+                            >
+                              Attempt Now
+                            </button>
+                          ) : (
+                            <p className="text-gray-600 font-medium italic">
+                              Attempted
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            ) : (
+              <div className="w-full h-full flex flex-col justify-center items-center">
+                <p className="text-center text-4xl font-semibold">Thank You.</p>
+                <p className="text-lg font-light mt-4 text-gray-600 text-center px-8">
+                  You have successfully completed your exam.
+                  <br /> You can now quite the session.
+                </p>
+                <button
+                  type='button'
+                  onClick={markExamAsFinished}
+                  className="bg-blue-700 hover:bg-blue-800 hover:cursor-pointer text-white px-8 py-4 rounded mt-8 shadow-md"
+                >
+                  Go to Dashboard
+                </button>
+              </div>
+            )}
 
             <div className="absolute bottom-0 flex justify-center items-center w-full gap-4 mb-5">
               <p className="text-gray-600 font-medium">Exam Portal by </p>

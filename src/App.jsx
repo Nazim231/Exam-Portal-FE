@@ -12,6 +12,8 @@ import AdminExaminees from './components/Faculty/Examinees/Examinees';
 import AttemptExam from './components/Students/AttemptExam';
 import AttempQuestions from './components/Students/AttemptQuestions';
 import SubmitSection from './components/Students/SubmitSection';
+import Result from './components/Students/Result';
+import Report from './components/Students/Report';
 
 function App() {
   return (
@@ -38,6 +40,8 @@ function App() {
             path="/attempt-exam/submit-section"
             element={<SubmitSection />}
           />
+          <Route path="/results" element={<Result />} />
+          <Route path="/report" element={<Report />} />
         </Route>
         <Route path="*" element={<p>Page Not Found</p>} />
       </Routes>

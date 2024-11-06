@@ -105,7 +105,7 @@ function Sections() {
         }
 
         alert('Section created successfully');
-        setSections({});
+        navigateTo(`/exams/${examId}/sections/examinees`);
       } catch (err) {
         alert(`Failed to create section ${err.message}`);
         console.log(`Add Exam Section Error:: ${err.message}`);
